@@ -34,8 +34,8 @@ export const Layout: React.FC = () => {
   const mobileMore = NAV.filter((n) => !MOBILE_MAIN.some((m) => m.to === n.to));
 
   const mobileCls = ({ isActive }: { isActive: boolean }) =>
-    `flex flex-col items-center justify-center gap-0.5 py-1 text-[10px] ${
-      isActive ? "text-accent" : "text-mut"
+    `relative flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] transition-colors ${
+      isActive ? "text-accent font-medium" : "text-mut active:bg-card2"
     }`;
 
   return (
@@ -118,14 +118,24 @@ export const Layout: React.FC = () => {
       </div>
 
       {/* 移动端底部导航 */}
-      <nav className="no-print pb-safe fixed inset-x-0 bottom-0 z-40 flex border-t border-line bg-card/95 backdrop-blur lg:hidden">
+      <nav className="no-print pb-safe fixed inset-x-0 bottom-0 z-40 flex items-stretch border-t border-line bg-card/95 shadow-[0_-4px_16px_rgba(0,0,0,0.35)] backdrop-blur lg:hidden">
         {MOBILE_MAIN.map((n) => (
           <NavLink key={n.to} to={n.to} end={n.to === "/"} className={mobileCls}>
-            <span className="text-lg leading-none">{n.icon}</span>
-            <span>{n.label}</span>
+            {({ isActive }: { isActive: boolean }) => (
+              <>
+                {isActive && <span className="absolute top-0 h-0.5 w-9 rounded-full bg-accent" />}
+                <span className="text-xl leading-none">{n.icon}</span>
+                <span>{n.label}</span>
+              </>
+            )}
           </NavLink>
         ))}
-        <button className="flex flex-col items-center justify-center gap-0.5 py-1 text-[10px] text-mut" onClick={() => setMoreOpen((o) => !o)}>
+        <button
+          className={`relative flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] transition-colors ${
+            moreOpen ? "text-accent font-medium" : "text-mut active:bg-card2"
+          }`}
+          onClick={() => setMoreOpen((o) => !o)}
+        >
           <span className="text-lg leading-none">⋯</span>
           <span>更多</span>
         </button>
