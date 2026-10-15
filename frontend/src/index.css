@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-bg text-fg antialiased;
+  font-feature-settings: "tnum";
+}
+
+/* 价格数字统一等宽 */
+.num {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 实时价格闪烁反馈 */
+@keyframes flashUp {
+  0% { background-color: rgba(239, 68, 68, 0.35); }
+  100% { background-color: transparent; }
+}
+@keyframes flashDown {
+  0% { background-color: rgba(34, 197, 94, 0.35); }
+  100% { background-color: transparent; }
+}
+.flash-up { animation: flashUp 0.8s ease-out; }
+.flash-down { animation: flashDown 0.8s ease-out; }
+
+/* 滚动条 */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { @apply bg-line rounded; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* 骨架屏 */
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.skeleton {
+  @apply rounded bg-card2;
+  background-image: linear-gradient(90deg, #1c2129 0%, #242a33 40%, #1c2129 80%);
+  background-size: 800px 100%;
+  animation: shimmer 1.3s infinite linear;
+}
+
+/* iOS 底部安全区（home indicator） */
+.pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* 打印（导出 PDF 用） */
+@media print {
+  body { background: #fff !important; color: #111 !important; }
+  .no-print { display: none !important; }
+  .print-plain { background: #fff !important; border-color: #ddd !important; color: #111 !important; }
+  .print-plain * { color: #111 !important; }
+}

@@ -1,0 +1,13 @@
+# 自动下载/生成的本地环境（一键脚本产物）
+runtime/
+backend/.venv/
+logs/
+
+# 用户数据
+backend/data/
+
+# 前端依赖（frontend/dist 为免 Node 部署的内置产物，务必保留，勿加入忽略）
+node_modules/
+__pycache__/
+*.pyc
+.DS_Store

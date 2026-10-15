@@ -1,0 +1,18 @@
+services:
+  smartinvest:
+    build: .
+    container_name: smartinvest-pro
+    ports:
+      - "8000:8000"
+    environment:
+      # OpenAI 兼容 LLM（DeepSeek / 豆包 / GPT 等）；不配置则使用本地规则引擎
+      - LLM_API_KEY=${LLM_API_KEY:-}
+      - LLM_BASE_URL=${LLM_BASE_URL:-https://api.deepseek.com/v1}
+      - LLM_MODEL=${LLM_MODEL:-deepseek-chat}
+      - SI_DATA_DIR=/data
+    volumes:
+      - smartinvest-data:/data
+    restart: unless-stopped
+
+volumes:
+  smartinvest-data:
