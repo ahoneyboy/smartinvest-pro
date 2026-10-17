@@ -195,10 +195,17 @@ const DeepAnalysis: React.FC<{ code: string }> = ({ code }) => {
               KDJ{kDJ(t.kdj)} · RSI6 {t.rsi6 ?? "—"} · BOLL 位置 {t.boll?.position ?? "—"}%
             </span>
           }>
-            技术面（近 60 日）
+            技术面（最长 {t.kline?.length ?? 0} 个交易日）
           </CardTitle>
           <div className="p-2">
-            <KLineChart bars={t.kline} height={360} />
+            <KLineChart
+              bars={t.kline}
+              height={460}
+              macd={t.macd}
+              kdj={t.kdj}
+              rsiSeries={t.rsi6_series}
+              bollSeries={t.boll_series}
+            />
           </div>
           <div className="grid grid-cols-4 gap-2 border-t border-line px-4 py-3 text-center text-[11px]">
             {["ma5", "ma10", "ma20", "ma60"].map((k) => (

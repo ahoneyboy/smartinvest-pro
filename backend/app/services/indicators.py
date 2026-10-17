@@ -54,9 +54,9 @@ def macd(closes: list[float], fast: int = 12, slow: int = 26, signal: int = 9) -
     return {
         "dif": round(dif[-1], 4), "dea": round(dea[-1], 4),
         "hist": round(hist[-1], 4), "cross": cross, "trend": trend,
-        "hist_series": [round(h, 4) for h in hist[-60:]],
-        "dif_series": [round(h, 4) for h in dif[-60:]],
-        "dea_series": [round(h, 4) for h in dea[-60:]],
+        "hist_series": [round(h, 4) for h in hist[-250:]],
+        "dif_series": [round(h, 4) for h in dif[-250:]],
+        "dea_series": [round(h, 4) for h in dea[-250:]],
     }
 
 
@@ -80,7 +80,12 @@ def kdj(bars: list[list], n: int = 9) -> dict:
             cross = "golden"
         elif ks[-2] >= ds[-2] and ks[-1] < ds[-1]:
             cross = "dead"
-    return {"k": round(ks[-1], 2), "d": round(ds[-1], 2), "j": round(j, 2), "cross": cross}
+    return {
+        "k": round(ks[-1], 2), "d": round(ds[-1], 2), "j": round(j, 2), "cross": cross,
+        "k_series": [round(v, 2) for v in ks[-250:]],
+        "d_series": [round(v, 2) for v in ds[-250:]],
+        "j_series": [round(3 * k - 2 * d, 2) for k, d in zip(ks[-250:], ds[-250:])],
+    }
 
 
 def rsi(closes: list[float], n: int = 14) -> float | None:
@@ -99,6 +104,44 @@ def rsi(closes: list[float], n: int = 14) -> float | None:
     if avg_loss == 0:
         return 100.0
     return 100 - 100 / (1 + avg_gain / avg_loss)
+
+
+def rsi_series(closes: list[float], n: int = 6, tail: int = 250) -> list[float | None]:
+    """Wilder RSI 序列。"""
+    if len(closes) < n + 1:
+        return []
+    gains, losses = [], []
+    for i in range(1, len(closes)):
+        ch = closes[i] - closes[i - 1]
+        gains.append(max(ch, 0))
+        losses.append(max(-ch, 0))
+    avg_gain = statistics.fmean(gains[:n])
+    avg_loss = statistics.fmean(losses[:n])
+    out: list[float | None] = [None] * n
+    ag, al = avg_gain, avg_loss
+    for i in range(n, len(gains)):
+        ag = (ag * (n - 1) + gains[i]) / n
+        al = (al * (n - 1) + losses[i]) / n
+        out.append(100 - 100 / (1 + ag / al) if al else 100.0)
+    return [round(v, 2) if v is not None else None for v in out[-tail:]]
+
+
+def boll_series(closes: list[float], n: int = 20, k: float = 2.0, tail: int = 250) -> dict:
+    """布林带上/中/下轨序列。"""
+    if len(closes) < n:
+        return {"upper": [], "mid": [], "lower": []}
+    upper, mid, lower = [], [], []
+    for i in range(n - 1, len(closes)):
+        window = closes[i - n + 1: i + 1]
+        m = statistics.fmean(window)
+        sd = statistics.pstdev(window)
+        upper.append(round(m + k * sd, 3))
+        mid.append(round(m, 3))
+        lower.append(round(m - k * sd, 3))
+    return {
+        "upper": upper[-tail:], "mid": mid[-tail:], "lower": lower[-tail:],
+        "dates_offset": n - 1,  # 序列相对 bars 的起始偏移
+    }
 
 
 def boll(closes: list[float], n: int = 20, k: float = 2.0) -> dict:
@@ -175,6 +218,8 @@ def compute_all(bars: list[list]) -> dict:
         "rsi6": round(v, 1) if (v := rsi(closes, 6)) is not None else None,
         "rsi12": round(v, 1) if (v := rsi(closes, 12)) is not None else None,
         "rsi24": round(v, 1) if (v := rsi(closes, 24)) is not None else None,
+        "rsi6_series": rsi_series(closes, 6),
+        "boll_series": boll_series(closes),
         "boll": boll(closes),
         "volume": volume_stats(bars),
         "support_pressure": support_pressure(bars),

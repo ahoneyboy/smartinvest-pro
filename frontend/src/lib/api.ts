@@ -162,6 +162,8 @@ export interface StockAnalysis {
     kdj: any;
     rsi6?: number | null;
     rsi12?: number | null;
+    rsi6_series?: (number | null)[] | null;
+    boll_series?: { upper?: number[]; mid?: number[]; lower?: number[] } | null;
     boll: any;
     volume: any;
   };

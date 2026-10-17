@@ -7,11 +7,12 @@ from . import indicators as ind
 EVIDENCE_LIMIT = 3  # 决策输出规范：依据最多 3 条
 
 
-async def build_signal(code: str, quote: dict | None = None) -> dict:
-    try:
-        bars = await kline_svc.get_kline(code, "day", 120)
-    except Exception:
-        bars = []
+async def build_signal(code: str, quote: dict | None = None, bars: list | None = None) -> dict:
+    if bars is None:
+        try:
+            bars = await kline_svc.get_kline(code, "day", 120)
+        except Exception:
+            bars = []
     if not bars:
         return {"code": code, "available": False, "reason": "K线数据双源均不可用（腾讯/东财暂断连）"}
     tech = ind.compute_all(bars)

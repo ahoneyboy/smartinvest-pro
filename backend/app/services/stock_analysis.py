@@ -4,6 +4,8 @@ from __future__ import annotations
 from ..cache import cache
 from ..sources import eastmoney as em
 from ..sources import tencent
+from . import kline as kline_svc
+from . import indicators as ind
 from . import signal as signal_svc
 from .llm import stock_narrative
 
@@ -66,15 +68,23 @@ async def analyze(code: str, use_llm: bool = True) -> dict:
 
     quote_map = await tencent.fetch_quotes([code])
     quote = quote_map.get(_full(code))
-    sig_task = signal_svc.build_signal(code, quote)
+    bars_task = kline_svc.get_kline(code, "day", 250)
     flow_task = safe_flow()
     basic_task = fetch_basic(code)
-    sig, flow_days, basic = await asyncio.gather(sig_task, flow_task, basic_task)
+    bars, flow_days, basic = await asyncio.gather(bars_task, flow_task, basic_task)
+    sig_task = signal_svc.build_signal(code, quote, bars=bars)
+    tech_full = ind.compute_all(bars)
+    sig = await sig_task
 
     if not sig.get("available"):
         return {"code": code, "available": False, "reason": sig.get("reason", "数据缺失")}
 
     tech = sig
+    if not tech.get("available"):
+        tech = {**tech_full, "available": True, "advice": {"confidence": 50, "reasons": [], "buy_price": 0,
+                "stop_loss": 0, "target_price": 0, "pressure": 0, "support": 0, "risk": "指标计算数据不足"},
+                "ma": tech_full.get("ma", {}), "rsi6": tech_full.get("rsi6"),
+                "macd_status": (tech_full.get("macd") or {}).get("trend")}
     flow_5d = sum(x["main"] for x in flow_days[-5:]) if flow_days else 0.0
     flow_degraded = not flow_days
     super_5d = sum(x["super"] for x in flow_days[-5:]) if flow_days else 0.0
@@ -105,15 +115,17 @@ async def analyze(code: str, use_llm: bool = True) -> dict:
         "change_pct": quote.get("change_pct") if quote else None,
         "generated_at": _now(),
         "technical": {
-            "kline": tech.get("kline_tail") or [],
+            "kline": tech_full["bars_tail"],
             "ma": tech.get("ma"),
             "ma_alignment": tech.get("ma_alignment"),
-            "macd": tech.get("macd"),
-            "kdj": tech.get("kdj"),
-            "rsi6": tech.get("rsi6"),
-            "rsi12": tech.get("rsi12"),
-            "boll": tech.get("boll"),
-            "volume": tech.get("volume"),
+            "macd": tech_full.get("macd"),
+            "kdj": tech_full.get("kdj"),
+            "rsi6": tech_full.get("rsi6"),
+            "rsi12": tech_full.get("rsi12"),
+            "rsi6_series": tech_full.get("rsi6_series"),
+            "boll_series": tech_full.get("boll_series"),
+            "boll": tech_full.get("boll"),
+            "volume": tech_full.get("volume"),
         },
         "capital": {
             "flow_days": flow_days,
